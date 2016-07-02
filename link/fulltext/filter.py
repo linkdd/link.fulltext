@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from b3j0f.utils.runtime import singleton_per_scope
-from b3j0f.utils.iterable import isiterable
 
 from link.utils.grammar import codegenerator, adopt_children, find_ancestor
 from grako.model import DepthFirstWalker, ModelBuilderSemantics

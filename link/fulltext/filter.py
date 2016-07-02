@@ -46,6 +46,9 @@ fulltext_parser = singleton_per_scope(
 
 
 class FulltextWalker(DepthFirstWalker):
+
+    _IDENTIFIER_NODE = '__identifier__'
+
     def __init__(self, context, *args, **kwargs):
         super(FulltextWalker, self).__init__(*args, **kwargs)
 
@@ -73,38 +76,19 @@ class FulltextWalker(DepthFirstWalker):
         return result
 
     def walk_IdentifierNode(self, node, child_retval):
-        node.name = node.name.value
-
-    def walk_NumberNode(self, node, child_retval):
-        n = ''.join(node.value)
-
-        if node.sign is not None:
-            n = int('{0}{1}'.format(node.sign, n))
-
-        else:
-            n = int(n)
-
-        node.value = n
-        del node.sign
-
-    def walk_RangeNode(self, node, child_retval):
-        begin = None if node.begin.value == "*" else node.begin.value.value
-        end = None if node.end.value == "*" else node.end.value.value
-
-        node.value = (begin, end)
-        del node.begin
-        del node.end
+        return FulltextWalker._IDENTIFIER_NODE
 
     def walk_TermNode(self, node, child_retval):
-        node.inverted = node.inverted is not None
-
-        if node.field is not None:
-            node.field = node.field.name
-
         result = False
         field = node.field
 
         # check if an expression was already evaluated
+        child_retval = [
+            retval
+            for retval in child_retval
+            if retval != FulltextWalker._IDENTIFIER_NODE
+        ]
+
         if child_retval[0] is not None:
             result = child_retval[0]
 
@@ -158,11 +142,47 @@ class FulltextWalker(DepthFirstWalker):
         return child_retval[0]
 
 
+class _TreeSimplifier(DepthFirstWalker):
+    def walk_IdentifierNode(self, node, child_retval):
+        node.name = node.name.value
+
+    def walk_NumberNode(self, node, child_retval):
+        n = ''.join(node.value)
+
+        if node.sign is not None:
+            n = int('{0}{1}'.format(node.sign, n))
+
+        else:
+            n = int(n)
+
+        node.value = n
+        del node.sign
+
+    def walk_RangeNode(self, node, child_retval):
+        begin = None if node.begin.value == "*" else node.begin.value.value
+        end = None if node.end.value == "*" else node.end.value.value
+
+        node.value = (begin, end)
+        del node.begin
+        del node.end
+
+    def walk_TermNode(self, node, child_retval):
+        node.inverted = node.inverted is not None
+
+        if node.field is not None:
+            node.field = node.field.name
+
+    def walk_RootNode(self, node, child_retval):
+        return node
+
+
 class FulltextMatch(object):
     def __init__(self, query, *args, **kwargs):
         super(FulltextMatch, self).__init__(*args, **kwargs)
 
-        self.model = fulltext_parser.parse(query)
+        model = fulltext_parser.parse(query)
+        simplifier = _TreeSimplifier()
+        self.model = simplifier.walk(model)
         adopt_children(self.model._ast, parent=self.model)
 
     def __call__(self, document):

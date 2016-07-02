@@ -3,8 +3,8 @@
 from b3j0f.utils.runtime import singleton_per_scope
 from b3j0f.utils.iterable import isiterable
 
+from link.utils.grammar import codegenerator, adopt_children, find_ancestor
 from grako.model import DepthFirstWalker, ModelBuilderSemantics
-from link.utils.grammar import codegenerator
 
 
 FULLTEXT_GRAMMAR = '''
@@ -52,30 +52,23 @@ class FulltextWalker(DepthFirstWalker):
         self.context = context
 
     def check_field(self, field, pattern):
-        result = False
-        pattern = pattern.value
+        exprtype = pattern.value.__class__.__name__
+        result = True
 
-        if pattern.__class__.__name__ == 'LiteralNode':
-            if isiterable(self.context[field]):
-                result = pattern.value in self.context[field]
+        if field not in self.context:
+            result = False
 
-            else:
-                result = pattern.value == self.context[field]
+        elif exprtype == 'LiteralNode':
+            result = pattern.value.value in self.context[field]
 
-        elif pattern.__class__.__name__ == 'RangeNode':
-            begin, end = pattern.value
-            local_result = True
+        elif exprtype == 'RangeNode':
+            begin, end = pattern.value.value
 
             if begin is not None:
-                local_result = self.context[field] >= begin
+                result = self.context[field] > begin
 
-            if local_result and end is not None:
-                local_result = self.context[field] < end
-
-            result = local_result
-
-        elif pattern.__class__.__name__ == 'GroupNode':
-            pass
+            if end is not None:
+                result = self.context[field] <= end
 
         return result
 
@@ -109,22 +102,45 @@ class FulltextWalker(DepthFirstWalker):
             node.field = node.field.name
 
         result = False
+        field = node.field
 
-        if node.field is not None and node.field in self.context:
-            result = self.check_field(node.field, node.pattern)
+        # check if an expression was already evaluated
+        if child_retval[0] is not None:
+            result = child_retval[0]
 
-        elif node.field is None:
-            for field in self.context.keys():
-                local_result = self.check_field(field, node.pattern)
+        else:
+            # find current field
+            if field is None:
+                parent = find_ancestor(node, 'TermNode')
 
-                if local_result:
-                    result = True
-                    break
+                while parent is not None:
+                    if parent.field is not None:
+                        break
+
+                    parent = find_ancestor(parent, 'TermNode')
+
+                if parent is not None:
+                    field = parent.field
+
+            # no current field
+            if field is None:
+                for key in self.context.keys():
+                    if self.check_field(key, node.pattern):
+                        result = True
+                        break
+
+            else:
+                result = self.check_field(field, node.pattern)
 
         if node.inverted:
             result = not result
 
         return result
+
+    def walk_ExpressionNode(self, node, child_retval):
+        exprtype = node.value.__class__.__name__
+
+        return child_retval[0] if exprtype == 'GroupNode' else None
 
     def walk_OrNode(self, node, child_retval):
         return any(child_retval)
@@ -132,11 +148,13 @@ class FulltextWalker(DepthFirstWalker):
     def walk_AndNode(self, node, child_retval):
         return all(child_retval)
 
+    def walk_GroupNode(self, node, child_retval):
+        return child_retval[0]
+
     def walk_SearchNode(self, node, child_retval):
         return child_retval[0]
 
     def walk_RootNode(self, node, child_retval):
-        print(node)
         return child_retval[0]
 
 
@@ -145,6 +163,7 @@ class FulltextMatch(object):
         super(FulltextMatch, self).__init__(*args, **kwargs)
 
         self.model = fulltext_parser.parse(query)
+        adopt_children(self.model._ast, parent=self.model)
 
     def __call__(self, document):
         walker = FulltextWalker(document)

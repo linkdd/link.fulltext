@@ -26,8 +26,10 @@ group::GroupNode = "(" s:search ")" ;
 expr::ExpressionNode = value:(group | range | literal) ;
 term::TermNode = [ inverted:"-" ] [ field:identifier ":" ] pattern:expr ;
 
-or::OrNode = left:(search | term) "OR" right:(term | search) ;
-and::AndNode = left:(search | term) [ "AND" ] right:(term | search) ;
+or::OrNode = left:(search | term) "OR" right:(term | search)
+           | ("(" left:(search | term) "OR" right:(term | search) ")");
+and::AndNode = left:(search | term) [ "AND" ] right:(term | search)
+             | ("(" left:(search | term) [ "AND" ] right:(term | search) ")") ;
 
 search::SearchNode = v:(and | or | term) ;
 

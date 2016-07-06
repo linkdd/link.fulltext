@@ -9,6 +9,7 @@ class FulltextIndex(Feature):
     """
 
     name = 'fulltext'
+    DATA_ID = 'id'
 
     def search(self, query):
         raise NotImplementedError()

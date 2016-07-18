@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from link.middleware.core import Feature
+from link.feature import Feature
 
 
 class FulltextIndex(Feature):

@@ -13,7 +13,7 @@ AUTHOR = 'David Delassus'
 AUTHOR_EMAIL = 'david.jose.delassus@gmail.com'
 LICENSE = 'MIT'
 REQUIREMENTS = [
-    'link.middleware>=0.16',
+    'link.feature>=1.1',
     'link.utils>=1.4'
 ]
 

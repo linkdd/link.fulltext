@@ -14,7 +14,7 @@ digit = /[0-9]/ ;
 number::NumberNode = [ sign:sign ] value:({ digit }+) ;
 
 @name
-literal::LiteralNode = value:(/\w*/) ;
+literal::LiteralNode = value:(/\w+/) ;
 
 @name
 identifier::IdentifierNode = name:literal ;
@@ -26,9 +26,9 @@ group::GroupNode = "(" s:search ")" ;
 expr::ExpressionNode = value:(group | range | literal) ;
 term::TermNode = [ inverted:"-" ] [ field:identifier ":" ] pattern:expr ;
 
-or::OrNode = left:(search | term) "OR" right:(term | search)
+or::OrNode = (left:(search | term) "OR" right:(term | search))
            | ("(" left:(search | term) "OR" right:(term | search) ")");
-and::AndNode = left:(search | term) [ "AND" ] right:(term | search)
+and::AndNode = (left:(search | term) [ "AND" ] right:(term | search))
              | ("(" left:(search | term) [ "AND" ] right:(term | search) ")") ;
 
 search::SearchNode = v:(and | or | term) ;
@@ -69,9 +69,9 @@ class FulltextWalker(DepthFirstWalker):
             begin, end = pattern.value.value
 
             if begin is not None:
-                result = self.context[field] > begin
+                result = self.context[field] >= begin
 
-            if end is not None:
+            if result and end is not None:
                 result = self.context[field] <= end
 
         return result

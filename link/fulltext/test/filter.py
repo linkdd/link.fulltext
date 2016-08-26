@@ -27,7 +27,24 @@ class TestMatcher(UTCase):
         ]
 
         for doc in docs:
-            self.assertFalse(fm({'a': 'foo'}))
+            self.assertFalse(fm(doc))
+
+    def test_single(self):
+        fm = FulltextMatch('a:foo')
+        self.assertTrue(fm({'a': 'foo'}))
+
+    def test_range(self):
+        fm = FulltextMatch('a:[ 5 TO 19 ]')
+
+        docs = [
+            {'a': i}
+            for i in range(5, 20)
+        ]
+
+        for doc in docs:
+            self.assertTrue(fm(doc))
+
+        self.assertFalse(fm({'a': 4}))
 
 
 if __name__ == '__main__':

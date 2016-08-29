@@ -7,6 +7,7 @@ from grako.model import DepthFirstWalker, ModelBuilderSemantics
 
 
 FULLTEXT_GRAMMAR = '''
+@@left_recursion :: False
 @@keyword :: OR AND TO
 
 sign = "+" | "-" ;

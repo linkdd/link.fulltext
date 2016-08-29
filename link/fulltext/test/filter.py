@@ -43,13 +43,13 @@ class TestMatcher(UTCase):
         self.assertFalse(fm({'a': -11}))
 
     def test_complex_pattern(self):
-        fm = FulltextMatch('a:(foo OR bar) b:(foo OR bar)')
+        fm = FulltextMatch('a:(foo OR bar) b:(foo OR (bar AND baz))')
 
         docs = [
             {'a': 'foo', 'b': 'foo'},
-            {'a': 'foo', 'b': 'bar'},
+            {'a': 'foo', 'b': 'barbaz'},
             {'a': 'bar', 'b': 'foo'},
-            {'a': 'bar', 'b': 'bar'}
+            {'a': 'bar', 'b': 'bazbar'}
         ]
 
         for doc in docs:
@@ -83,6 +83,20 @@ class TestMatcher(UTCase):
 
         for doc in docs:
             self.assertFalse(fm(doc))
+
+    def test_no_field(self):
+        fm = FulltextMatch('foo OR bar')
+
+        docs = [
+            {'a': 'foo'},
+            {'b': 'foo'},
+            {'c': 'bar'}
+        ]
+
+        for doc in docs:
+            self.assertTrue(fm(doc))
+
+        self.assertFalse(fm({'a': 'baz'}))
 
 
 if __name__ == '__main__':

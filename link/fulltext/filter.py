@@ -77,19 +77,9 @@ class FulltextWalker(DepthFirstWalker):
 
         return result
 
-    def walk_IdentifierNode(self, node, child_retval):
-        return FulltextWalker._IDENTIFIER_NODE
-
     def walk_TermNode(self, node, child_retval):
         result = False
         field = node.field
-
-        # check if an expression was already evaluated
-        child_retval = [
-            retval
-            for retval in child_retval
-            if retval != FulltextWalker._IDENTIFIER_NODE
-        ]
 
         if child_retval[0] is not None:
             result = child_retval[0]

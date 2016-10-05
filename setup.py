@@ -14,7 +14,7 @@ AUTHOR_EMAIL = 'david.jose.delassus@gmail.com'
 LICENSE = 'MIT'
 REQUIREMENTS = [
     'link.feature>=2.1',
-    'link.utils>=1.5'
+    'link.utils>=2.0'
 ]
 
 CLASSIFIERS = [
